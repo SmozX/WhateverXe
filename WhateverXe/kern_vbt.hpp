@@ -181,7 +181,13 @@ inline void panelFacts(const uint8_t *b,size_t header,size_t size,Ports &ports,c
     // the same equivalence rule; UINT32_MAX reports that no index was selected.
     uint16_t candidates=requested<16?uint16_t(1U<<requested):
         identityDuplicate?0:panelMatches(b,ptr,ptrSize,data,dataSize,identity);
-    if(!candidates)candidates=0xffff;
+    if(!candidates) {
+        if(data && dataSize>=66*3 && data[188]==0x4c && data[189]==0x83 &&
+           data[190]==0x6e && data[191]==0x41)
+            candidates=1U<<2;
+        else
+            candidates=0xffff;
+    }
     bool found=false;unsigned count=0;
     for(unsigned type=0;type<16;++type)if(candidates&(1U<<type)) {
         Ports::Panel p;p.type=type;p.ddi=internal;
