@@ -3968,6 +3968,7 @@ Display13OutputWiring XE::display13BoardWiring(IOService *provider) {
         board=XELP::VBT::selectHDMI(true,wiring?wiring->getBytesNoCopy():nullptr,
             wiring?wiring->getLength():0,firmwarePorts,3);
     }
+    if(board.panel) { board.hdmi=0; board.dp=0; board.typeC=0; }
     if(checkKernelArgument("-wex-dsi-adopt")) {
         // The old HDMI experiment tears down the firmware DSI link. Never
         // combine that handoff with adoption, or replace an existing A route.
@@ -7564,7 +7565,13 @@ uint32_t XE::wrapDisplay13ReadAUX(void *port,uint32_t address,void *data,uint32_
  IOLockLock(c.lock);const bool ready=display13AUXReady(port,false);IOLockUnlock(c.lock);
  if(!ready)return kIOReturnNotReady;
  const auto r=FunctionCast(wrapDisplay13ReadAUX,callbackXE->orgDisplay13ReadAUX)(port,address,data,length);
- IOLockLock(c.lock);const bool complete=display13AUXReady(port,false);IOLockUnlock(c.lock);
+ IOLockLock(c.lock);const bool complete=display13AUXReady(port,false);
+ const auto ddi=complete ? Display13FBMemory::field<uint32_t>(port,0x120) : UINT32_MAX;
+ IOLockUnlock(c.lock);
+ if(!r && complete && data && ddi==0 && address<=0x100 && length>(0x100-address)) {
+  auto &bw=static_cast<uint8_t *>(data)[0x100-address];
+  if(bw!=0x06 && bw!=0x0A && bw!=0x14 && bw!=0x1E)bw=0x14;
+ }
  return r ? r : complete ? 0 : kIOReturnNotReady;
 }
 uint32_t XE::wrapDisplay13WriteAUX(void *port,uint32_t address,void *data,uint32_t length) {
