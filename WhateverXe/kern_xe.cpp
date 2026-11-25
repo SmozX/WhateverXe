@@ -3968,7 +3968,6 @@ Display13OutputWiring XE::display13BoardWiring(IOService *provider) {
         board=XELP::VBT::selectHDMI(true,wiring?wiring->getBytesNoCopy():nullptr,
             wiring?wiring->getLength():0,firmwarePorts,3);
     }
-    if(board.panel) { board.hdmi=0; board.dp=0; board.typeC=0; }
     if(checkKernelArgument("-wex-dsi-adopt")) {
         // The old HDMI experiment tears down the firmware DSI link. Never
         // combine that handoff with adoption, or replace an existing A route.
